@@ -1,0 +1,147 @@
+---
+title: "Trabajo Práctico Final"
+author: "Gazze Simón"
+date: "2025-06-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen = 999)
+```
+
+```{r}
+library(readxl)
+library(ggplot2)
+library(tidyverse)
+library(patchwork)
+```
+
+## Introducción
+
+El margen mínimo de solvencia constituye uno de los pilares fundamentales en la supervisión y estabilidad financiera del mercado asegurador. Se trata de una exigencia regulatoria destinada a garantizar que las compañías de seguros cuenten con un respaldo económico suficiente para hacer frente a sus obligaciones futuras, incluso en escenarios adversos.
+
+Determinar dicho margen con precisión es clave no solo para cumplir con las normativas vigentes, sino también para contribuir a la salud financiera de la entidad aseguradora, prevenir situaciones de Ruina Técnica, y garantizar la confianza de los asegurados.
+
+En este trabajo, se calculará el margen mínimo de solvencia tal que la probabilidad de solvencia sea del 99% para una empresa aseguradora en el año 2024, en base a su cartera de pólizas y la información disponible sobre siniestros del año 2023. Para realizar dicho cálculo se tendrá que simular la distribución del número de siniestros en el año 2024 y la distribución de las cuantías individuales en dicho año.
+
+## Análisis descriptivo
+
+Para obtener un panorama real de una posible distribución de las cuantías individuales en el año 2024 en base a la información recolectada en el año 2023 se realizó un ajuste por inflación, utilizando la serie CER obtenida en la página del [Banco Central de la República Argentina](https://www.bcra.gob.ar/PublicacionesEstadisticas/Principales_variables_datos.asp?serie=3540&detalle=CER%A0(Base%2002/02/2002=1)).
+
+A continuación se presenta la distribución de las cuantías actualizadas:
+
+
+```{r}
+df_cuantias <- read_excel("Trabajo Final 2024 Base de Datos .xlsx")
+
+a = ggplot(df_cuantias, aes(x=`Cuantía actualizada`)) +
+  geom_histogram(bins = 20, fill = "lightblue", color = "black")+
+  labs(title = "Distribución de las cuantías ajustadas", y = "Frecuencia", x = "Cuantías")
+
+b = ggplot(df_cuantias)+
+  aes(x=`Cuantía actualizada`)+
+  geom_density(color = "blue4")+
+  labs(title = "Distribución de las cuantías ajustadas", y = "Frecuencia", x = "Cuantías")
+
+a + b
+
+```
+Se observa una distribución muy asimétrica a la derecha, presentando algunos valores extremos cercanos a los 12 millones de pesos.
+
+Además, se cuenta con la información de la cantidad de siniestros y de las cuantías totales para los años 2021,2022 y 2023. Se presentan a continuación:
+
+```{r}
+df <- data.frame(
+  Año = c(2021, 2022, 2023),
+  Pólizas = c(24752, 25348, 25615),
+  Siniestros = c(3023, 3581, 3431)
+)
+
+# Pasamos de ancho a largo
+df_long <- pivot_longer(df, cols = c(Pólizas, Siniestros),
+                        names_to = "Tipo", values_to = "Cantidad")
+
+# Gráfico de barras apiladas
+ggplot(df_long, aes(x = factor(Año), y = Cantidad, fill = Tipo)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Pólizas y Siniestros por Año",
+       x = "Año", y = "Cantidad") +
+  scale_fill_manual(values = c("Pólizas" = "#1f77b4", "Siniestros" = "lightblue")) +
+  theme_minimal()
+```
+Se observan comportamientos similares en todos los años analizados.
+
+Las proporciones de siniestros en cada año son las siguientes,
+
+$\frac{3023}{24752}$ = $0.1221$
+
+$\frac{3581}{25348}$ = $0.1412$
+
+$\frac{3431}{25615}$ = $0.1339$
+
+Tal como se comentó anteriormente, se observan valores similares respecto a la proporción de siniestros por póliza en los años analizados, por lo que se podría suponer que en el año 2024 se va a mantener la cantidad de pólizas y el perfil de las mismas.
+
+## Desarrollo
+
+Para realizar el cálculo del Margen de Solvencia Mínimo se debe obtener la distribución aproximada de la cuantía total de los siniestros en el año 2024. Para obtener dicha distribución hay que calcular (también mediante aproximaciones) las distribuciones de:
+
+- **Número de siniestros ocurridos**, en base a la información de la cantidad de siniestros ocurridos en los años 2021,2022 y 2023.
+
+- **Cuantías individuales de los siniestros**, en base a la distribución ya conocida de las cuantías individuales en el año 2023.
+
+Es decir, se simulará inicialmente el número de siniestros para un año y para esta cantidad de siniestros se simulará la cuantía de cada uno de ellos. Este procedimiento se repetirá para un gran número de años, peritiendo obtener así la distribución aproximada de la cuantía total.
+
+Es importante aclarar que para cada uno de estos años simulados, se va a suponer que el número de pólizas es el mismo que las que se tienen en el año 2023, es decir, 25.615 pólizas.
+
+### Propuesta 1 (Poisson - Log Normal)
+
+Para esta primer propuesta, se utilizará la distribución de Poisson para simular el número de siniestros en 100.000 años. Para posteriormente calcular la distribución de las cuantías individuales en cada uno de esos años.
+
+En relación a lo visto anteriormente, el parámetro de la distribución Poisson ($E(N)$ = $\lambda$, donde N es la cantidad de siniestros por póliza) será $\lambda$ = $0.135$.
+
+```{r}
+set.seed(123)
+siniestros1 = numeric(100000)
+
+for(i in 1:100000){ 
+siniestros1[i] <- sum(rpois(n = 25615, lambda = 0.135))
+
+}
+
+siniestros1
+
+saveRDS(siniestros1, file = "siniestros1.rds")
+
+hist(siniestros1)
+
+```
+
+
+## Simulación de la cuantía de los siniestros
+
+Log Normal
+
+*Estimacion de los parámetros*
+
+```{r}
+log_media = mean(log(df_cuantias$`Cuantía actualizada`))
+
+log_desvio = sd(log(df_cuantias$`Cuantía actualizada`))
+
+set.seed(1)
+
+x <- rlnorm(N, meanlog = log_media, sdlog = log_desvio)
+```
+
+Pareto II
+
+```{r}
+alpha = min(df_cuantias$`Cuantía actualizada`)
+
+beta = 1/((1/N)*sum(log(df_cuantias$`Cuantía actualizada`/alpha)))
+```
+
+## 
+
+## 
