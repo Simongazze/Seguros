@@ -138,7 +138,11 @@ if(FALSE){for(i in 1:length(siniestros1)) {
 
 #simulaciones <- readRDS("simulaciones.rds")
 
-muestra_100 <- sample(simulaciones, size = 100)
+#muestra_100 <- sample(simulaciones, size = 100)
+
+#saveRDS(muestra_100, file = "muestra_100.rds")
+
+muestra_100 <- readRDS("muestra_100.rds")
 
 df_muestra <- bind_rows(
   lapply(seq_along(muestra_100), function(i) {
@@ -156,7 +160,11 @@ ggplot(df_muestra, aes(x = valor, group = grupo)) +
 Una vez obtenidas las cuantías individuales para cada año simulado, se sumarán dichas cuantías para obtener valores de 100.000 cuantías totales, formando así una distribución simulada de la cuantía total.
 
 ```{r}
-totales <- data.frame(totales = sapply(simulaciones, sum))
+#totales <- data.frame(totales = sapply(simulaciones, sum))
+
+#saveRDS(totales, file = "totales.rds")
+
+totales <- readRDS("totales.rds")
 
 a1 = ggplot(totales)+
   aes(x=totales)+
@@ -170,9 +178,9 @@ b1 = ggplot(totales)+
 
 a1 + b1
 
-skewness(totales$totales)
-mean(totales$totales)
-sd(totales$totales)
+#skewness(totales$totales)
+#mean(totales$totales)
+#sd(totales$totales)
 ```
 
 La distribución simulada presenta un comportamiento parecido a la Normal, y al calcular el coeficiente de asimetría muestral se obtiene un valor de 0.028. Por este motivo, el cálculo del Margen de Solvencia Mínimo se calculará mediante una aproximación Normal de las cuantías totales con $\mu$ = 3.249.248.925 y $\sigma$ = 61.547.862 .
@@ -185,7 +193,7 @@ Para que la probabilidad de solvencia sea del 99%, se necesita conocer el valor 
 
 $$ Z \sim  N(0,1)  \rightarrow P(Z < z_0) = 0.99 \rightarrow z_0 = 2.326$$
 
-Para un recargo de seguridad (R) del 1%,
+- Para un *recargo de seguridad (R) del 1%*,
 
 $$E(Y) = 3.249.248.925 , \ SD(Y) = 61.547.862 , \ R = E(Y) * 0.01 = 32.492.489 , \ PR = E(Y) + R = 3.281.741.414$$ Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
 
@@ -193,9 +201,17 @@ $$ y_0 = 3.249.248.925 + 2.326*61.547.862 = 3.392.409.252 $$ Y el Margen de Solv
 
 $$MSM = y_0 - PR = 3.392.409.252 - 3.281.741.414 = 110.667.838$$
 
-```{r}
+- Para un *recargo de seguridad (R) del 3%*,
 
-```
+$$E(Y) = 3.249.248.925 , \ SD(Y) = 61.547.862 , \ R = E(Y) * 0.03 = 97.477.468 , \ PR = E(Y) + R = 3.346.726.393$$
+
+Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
+
+$$ y_0 = 3.249.248.925 + 2.326*61.547.862 = 3.392.409.252 $$ 
+
+Y el Margen de Solvencia Mínimo resulta:
+
+$$MSM = y_0 - PR = 3.392.409.252 - 3.346.726.393 = 45.682.859$$
 
 ## Simulación de la cuantía de los siniestros
 
