@@ -1,12 +1,16 @@
 ---
 title: "Trabajo Práctico Final"
-author: "Gazze Simón"
-date: "2025-06-27"
-output: html_document
+author: "Gazze Simón, Moresi Manuel"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    toc_depth: 3
+    highlight: tango
+    theme: "darkly"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, fig.align = "center", warning = FALSE, message = FALSE)
 options(scipen = 999)
 ```
 
@@ -16,6 +20,7 @@ library(ggplot2)
 library(tidyverse)
 library(patchwork)
 library(moments)
+library(MASS)
 ```
 
 ## Introducción
@@ -37,12 +42,15 @@ df_cuantias <- read_excel("Trabajo Final 2024 Base de Datos .xlsx")
 
 a = ggplot(df_cuantias, aes(x=`Cuantía actualizada`)) +
   geom_histogram(bins = 20, fill = "lightblue", color = "black")+
-  labs(title = "Distribución de las cuantías ajustadas", y = "Frecuencia", x = "Cuantías")
+  labs(title = "Distribución de las cuantías ajustadas", y = "Frecuencia", x = "Cuantías")+
+  theme(plot.title = element_text(size = 10,face = "bold", hjust = 0.5))
 
 b = ggplot(df_cuantias)+
   aes(x=`Cuantía actualizada`)+
   geom_density(color = "blue4")+
-  labs(title = "Distribución de las cuantías ajustadas", y = "Frecuencia", x = "Cuantías")
+  labs(title = "Densidad de las cuantías ajustadas", y = "Frecuencia", x = "Cuantías")+
+  scale_x_continuous(breaks = c(0,4000000,8000000,12000000))+
+  theme(plot.title = element_text(size = 10,face = "bold", hjust = 0.5))
 
 a + b
 
@@ -65,22 +73,25 @@ df_long <- pivot_longer(df, cols = c(Pólizas, Siniestros),
 
 # Gráfico de barras apiladas
 ggplot(df_long, aes(x = factor(Año), y = Cantidad, fill = Tipo)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Pólizas y Siniestros por Año",
+  geom_bar(stat = "identity", color = "black", position = "dodge") +
+  labs(title = "Pólizas y Siniestros por año",
        x = "Año", y = "Cantidad") +
   scale_fill_manual(values = c("Pólizas" = "#1f77b4", "Siniestros" = "lightblue")) +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10,face = "bold", hjust = 0.5)) 
 ```
 
 Se observan comportamientos similares en todos los años analizados.
 
 Las proporciones de siniestros en cada año son las siguientes,
 
-$\frac{3023}{24752}$ = $0.1221$
+$$p_{2021} = \frac{3023}{24752} = 0.1221$$
 
-$\frac{3581}{25348}$ = $0.1412$
 
-$\frac{3431}{25615}$ = $0.1339$
+$$p_{2022} = \frac{3581}{25348} = 0.1412$$
+
+
+$$p_{2023} = \frac{3431}{25615} = 0.1339$$
 
 Tal como se comentó anteriormente, se observan valores similares respecto a la proporción de siniestros por póliza en los años analizados, por lo que se podría suponer que en el año 2024 se va a mantener la cantidad de pólizas y el perfil de las mismas.
 
@@ -98,9 +109,9 @@ Es importante aclarar que para cada uno de estos años simulados, se va a supone
 
 ### Propuesta 1 (Poisson - Log Normal)
 
-Para esta primer propuesta, se utilizará la distribución de Poisson para simular el número de siniestros en 100.000 años. Para posteriormente calcular la distribución de las cuantías individuales en cada uno de esos años.
+Para esta primer propuesta, se utilizará la distribución de Poisson para simular el número de siniestros en 100.000 años, para posteriormente calcular la distribución de las cuantías individuales en cada uno de esos años.
 
-En relación a lo visto anteriormente, el parámetro de la distribución Poisson ($E(N)$ = $\lambda$, donde N es la cantidad de siniestros por póliza) será $\lambda$ = $0.135$.
+En relación a lo visto anteriormente, el parámetro de la distribución Poisson ($E(N) = \lambda$, donde N es la cantidad de siniestros por póliza) será $\lambda = 0.135$.
 
 ```{r}
 set.seed(123)
@@ -114,13 +125,23 @@ siniestros1[i] <- sum(rpois(n = 25615, lambda = 0.135))
 #saveRDS(siniestros1, file = "siniestros1.rds")
 siniestros1 <- readRDS("siniestros1.rds")
 
-siniestros1
 
-hist(siniestros1)
+df_siniestros1 <- bind_rows(
+  lapply(seq_along(siniestros1), function(i) {
+    data.frame(valor = siniestros1[[i]])
+  })
+)
+
+ggplot(df_siniestros1)+
+  aes(x=valor)+
+  geom_histogram(bins = 20, color = "black", fill = "lightblue")+
+  labs(title = "Distribución de las cantidades de siniestros simuladas", y = "Frecuencia", x = "Siniestros")+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 10,face = "bold",hjust = 0.5))
 
 ```
 
-Ahora se calculará la cuantía individual de cada uno de los siniestros, en cada año:
+Ahora se calculará la cuantía individual de cada uno de los siniestros en cada año, a partir de una distribución Log Normal, con $\mu = 944.906,6$ y $\sigma = 572.011,2$:
 
 ```{r}
 set.seed(1)
@@ -134,7 +155,6 @@ if(FALSE){for(i in 1:length(siniestros1)) {
   simulaciones[[i]] <- rlnorm(siniestros1[i], meanlog = log_media, sdlog = log_desvio)
 }}
 
-#saveRDS(simulaciones, file = "simulaciones.rds")
 
 #simulaciones <- readRDS("simulaciones.rds")
 
@@ -154,10 +174,11 @@ ggplot(df_muestra, aes(x = valor, group = grupo)) +
   geom_density(size = 0.8, alpha = 0.7, color = "#1f77b4") +
   labs(title = "Densidades de 100 distribuciones simuladas",
        x = "Valor simulado", y = "Densidad") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10,face = "bold", hjust = 0.5)) 
 ```
 
-Una vez obtenidas las cuantías individuales para cada año simulado, se sumarán dichas cuantías para obtener valores de 100.000 cuantías totales, formando así una distribución simulada de la cuantía total.
+Una vez obtenidas las cuantías individuales para cada año simulado, se sumarán dichas cuantías para obtener valores de 100.000 cuantías totales, formando así una distribución simulada de la misma:
 
 ```{r}
 #totales <- data.frame(totales = sapply(simulaciones, sum))
@@ -169,12 +190,16 @@ totales <- readRDS("totales.rds")
 a1 = ggplot(totales)+
   aes(x=totales)+
   geom_histogram(bins = 20, color = "black", fill = "lightblue")+
-  labs(title = "Distribución de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")
+  labs(title = "Distribución de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 9,face = "bold"))
 
 b1 = ggplot(totales)+
   aes(x=totales)+
   geom_density(color = "#1f77b4")+
-  labs(title = "Distribución de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")
+  labs(title = "Densidad de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 9,face = "bold"))
 
 a1 + b1
 
@@ -183,7 +208,7 @@ a1 + b1
 #sd(totales$totales)
 ```
 
-La distribución simulada presenta un comportamiento parecido a la Normal, y al calcular el coeficiente de asimetría muestral se obtiene un valor de 0.028. Por este motivo, el cálculo del Margen de Solvencia Mínimo se calculará mediante una aproximación Normal de las cuantías totales con $\mu$ = 3.249.248.925 y $\sigma$ = 61.547.862 .
+La distribución simulada presenta un comportamiento parecido a la Normal, y al calcular el coeficiente de asimetría muestral se obtiene un valor de $0.028$. Por este motivo, el cálculo del Margen de Solvencia Mínimo se calculará mediante una aproximación Normal de las cuantías totales con $\mu = 3.249.248.925$ y $\sigma = 61.547.862$.
 
 #### Margen de Solvencia Mínimo
 
@@ -193,17 +218,21 @@ Para que la probabilidad de solvencia sea del 99%, se necesita conocer el valor 
 
 $$ Z \sim  N(0,1)  \rightarrow P(Z < z_0) = 0.99 \rightarrow z_0 = 2.326$$
 
-- Para un *recargo de seguridad (R) del 1%*,
+- Para un *recargo de seguridad (R) del 1%*:
 
-$$E(Y) = 3.249.248.925 , \ SD(Y) = 61.547.862 , \ R = E(Y) * 0.01 = 32.492.489 , \ PR = E(Y) + R = 3.281.741.414$$ Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
+$$E(Y) = 3.249.248.925 , \ SD(Y) = 61.547.862 , \ R = E(Y) \times 0.01 = 32.492.489 , \ PR = E(Y) + R = 3.281.741.414$$ 
 
-$$ y_0 = 3.249.248.925 + 2.326*61.547.862 = 3.392.409.252 $$ Y el Margen de Solvencia Mínimo resulta:
+Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
+
+$$ y_0 = 3.249.248.925 + 2.326*61.547.862 = 3.392.409.252 $$ 
+
+Y el Margen de Solvencia Mínimo resulta:
 
 $$MSM = y_0 - PR = 3.392.409.252 - 3.281.741.414 = 110.667.838$$
 
-- Para un *recargo de seguridad (R) del 3%*,
+- Para un *recargo de seguridad (R) del 3%*:
 
-$$E(Y) = 3.249.248.925 , \ SD(Y) = 61.547.862 , \ R = E(Y) * 0.03 = 97.477.468 , \ PR = E(Y) + R = 3.346.726.393$$
+$$E(Y) = 3.249.248.925 , \ SD(Y) = 61.547.862 , \ R = E(Y) \times 0.03 = 97.477.468 , \ PR = E(Y) + R = 3.346.726.393$$
 
 Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
 
@@ -213,19 +242,137 @@ Y el Margen de Solvencia Mínimo resulta:
 
 $$MSM = y_0 - PR = 3.392.409.252 - 3.346.726.393 = 45.682.859$$
 
-## Simulación de la cuantía de los siniestros
+### Propuesta 2 (Poisson - Pareto II)
 
-```{}
-```
+Para esta propuesta, se utilizará nuevamente la distribución de Poisson para simular el número de siniestros en 100.000 años, para posteriormente calcular la distribución de las cuantías individuales en cada uno de esos años.
 
-Pareto II
+Nuevamente, el parámetro de la distribución Poisson ($E(N) = \lambda$, donde N es la cantidad de siniestros por póliza) será $\lambda = 0.135$.
 
 ```{r}
-#alpha = min(df_cuantias$`Cuantía actualizada`)
+set.seed(124)
+#siniestros2 = numeric(100000)
 
-#beta = 1/((1/N)*sum(log(df_cuantias$`Cuantía actualizada`/alpha)))
+if(FALSE){for(i in 1:100000){ 
+siniestros2[i] <- sum(rpois(n = 25615, lambda = 0.135))
+
+}}
+
+#saveRDS(siniestros2, file = "siniestros2.rds")
+siniestros2 <- readRDS("siniestros2.rds")
+
+
+df_siniestros2 <- bind_rows(
+  lapply(seq_along(siniestros2), function(i) {
+    data.frame(valor = siniestros2[[i]])
+  })
+)
+
+ggplot(df_siniestros2)+
+  aes(x=valor)+
+  geom_histogram(bins = 20, color = "black", fill = "lightblue")+
+  labs(title = "Distribución de las cantidades de siniestros simuladas", y = "Frecuencia", x = "Siniestros")+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 10,face = "bold",hjust = 0.5))
+
 ```
 
-## 
+Ahora se calculará la cuantía individual de cada uno de los siniestros en cada año, a partir de una distribuciónde Weibull, con $\alpha = 165346.3$ y $\beta = 0.614$:
 
-## 
+
+```{r}
+set.seed(2)
+
+fit <- fitdistr(df_cuantias$`Cuantía actualizada`, "weibull")
+
+simulaciones2 <- vector("list", length(siniestros2))
+
+if (FALSE) {for(i in 1:length(siniestros2)) {
+  simulaciones2[[i]] <- rweibull(siniestros2[i], shape = 1.79472, scale = 1052668.59354)
+}} 
+
+#muestra2_100 <- sample(simulaciones2, size = 100)
+
+#saveRDS(muestra2_100, file = "muestra2_100.rds")
+
+muestra2_100 <- readRDS("muestra2_100.rds")
+
+df_muestra2 <- bind_rows(
+  lapply(seq_along(muestra2_100), function(i) {
+    data.frame(valor = muestra2_100[[i]], grupo = paste0("Dist_", i))
+  })
+)
+
+ggplot(df_muestra2, aes(x = valor, group = grupo)) +
+  geom_density(size = 0.8, alpha = 0.7, color = "#1f77b4") +
+  labs(title = "Densidades de 100 distribuciones simuladas",
+       x = "Valor simulado", y = "Densidad") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10,face = "bold", hjust = 0.5)) 
+```
+
+Una vez obtenidas las cuantías individuales para cada año simulado, se sumarán dichas cuantías para obtener valores de 100.000 cuantías totales, formando así una distribución simulada de la misma:
+
+```{r}
+#totales2 <- data.frame(totales2 = sapply(simulaciones2, sum))
+
+#saveRDS(totales2, file = "totales2.rds")
+
+totales2 <- readRDS("totales2.rds")
+
+a2 = ggplot(totales2)+
+  aes(x=totales2)+
+  geom_histogram(bins = 20, color = "black", fill = "lightblue")+
+  labs(title = "Distribución de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
+  scale_x_continuous(breaks = c(3000000000,3200000000,3400000000))+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 9,face = "bold"))
+
+b2 = ggplot(totales2)+
+  aes(x=totales2)+
+  geom_density(color = "#1f77b4")+
+  labs(title = "Densidad de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
+  scale_x_continuous(breaks = c(3000000000,3200000000,3400000000))+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 9,face = "bold"))
+
+a2 + b2
+
+#skewness(totales2$totales2)
+#mean(totales2$totales2)
+#sd(totales2$totales2)
+```
+
+Al realizar las 100.000 simulaciones, se observa que la distribución resultante se asemeja a una distribición Normal. Por lo tanto, el Margen de Solvencia Mínimo se calculará mediante una aproximación Normal de las cuantías totales con $\mu = 3.237.807.477$ y $\sigma = 63.682.695$.
+
+#### Margen de Solvencia Mínimo
+
+Para ser consistentes con lo trabajado anteriormente, se utilizarán recargos de seguridad del 1% y 3%.
+
+Para que la probabilidad de solvencia sea del 99%, se necesita conocer el valor de la Normal Estandar que acumula el 99% de probabilidad.
+
+$$ Z \sim  N(0,1)  \rightarrow P(Z < z_0) = 0.99 \rightarrow z_0 = 2.326$$
+
+- Para un *recargo de seguridad (R) del 1%*:
+
+$$E(Y) = 3.237.807.477 , \ SD(Y) = 63.682.695 , \ R = E(Y) \times 0.01 = 32.378.075 , \ PR = E(Y) + R = 3.270.185.552$$ 
+
+Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
+
+$$ y_0 = 3.237.807.477 + 2.326*63.682.695 = 3.385.933.426 $$ 
+
+Y el Margen de Solvencia Mínimo resulta:
+
+$$MSM = y_0 - PR = 3.385.933.426 - 3.270.185.552 = 115.747.874$$
+
+- Para un *recargo de seguridad (R) del 3%*:
+
+$$E(Y) = 3.237.807.477 , \ SD(Y) = 63.682.695 , \ R = E(Y) \times 0.03 = 97.134.224 , \ PR = E(Y) + R = 3.334.941.701$$
+
+Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
+
+$$ y_0 = 3.237.807.477 + 2.326*63.682.695 = 3.385.933.426 $$ 
+
+Y el Margen de Solvencia Mínimo resulta:
+
+$$MSM = y_0 - PR = 3.385.933.426 - 3.334.941.701 = 50.991.725$$
+
