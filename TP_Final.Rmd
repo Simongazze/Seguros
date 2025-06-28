@@ -221,9 +221,9 @@ $$MSM = y_0 - PR = 3.392.409.252 - 3.346.726.393 = 45.682.859$$
 Pareto II
 
 ```{r}
-alpha = min(df_cuantias$`Cuantía actualizada`)
+#alpha = min(df_cuantias$`Cuantía actualizada`)
 
-beta = 1/((1/N)*sum(log(df_cuantias$`Cuantía actualizada`/alpha)))
+#beta = 1/((1/N)*sum(log(df_cuantias$`Cuantía actualizada`/alpha)))
 ```
 
 ## 
