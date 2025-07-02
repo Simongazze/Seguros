@@ -110,7 +110,7 @@ resumen %>%
   column_spec(1, bold = TRUE)
 ```
 
-Además, se cuenta con la información de la cantidad de siniestros y de las cuantías totales para los años 2021,2022 y 2023. Se presentan a continuación:
+Además, se cuenta con la información de la cantidad de siniestros y de las cuantías totales para los años 2021, 2022 y 2023. Se presentan a continuación:
 
 ```{r}
 df <- data.frame(
@@ -149,7 +149,7 @@ Tal como se comentó anteriormente, se observan valores similares respecto a la 
 
 Para realizar el cálculo del Margen de Solvencia Mínimo se debe obtener la distribución aproximada de la cuantía total de los siniestros en el año 2024. Para obtener dicha distribución hay que calcular (también mediante aproximaciones) las distribuciones de:
 
--   **Número de siniestros ocurridos**, en base a la información de la cantidad de siniestros ocurridos en los años 2021,2022 y 2023.
+-   **Número de siniestros ocurridos**, en base a la información de la cantidad de siniestros ocurridos en los años 2021, 2022 y 2023.
 
 -   **Cuantías individuales de los siniestros**, en base a la distribución ya conocida de las cuantías individuales en el año 2023.
 
@@ -264,6 +264,7 @@ a1 + b1
 
 La distribución simulada presenta un comportamiento parecido a la Normal, y al calcular el coeficiente de asimetría muestral se obtiene un valor de $0.038$. Por este motivo, el cálculo del Margen de Solvencia Mínimo se calculará mediante una aproximación Normal de las cuantías totales con $\mu = 1.528.104.408$ y $\sigma = 28.118.258$.
 
+
 #### Margen de Solvencia Mínimo
 
 Para este cálculo se va a tener que definir de antemano la prima recargada (PR) que se va a cobrar al cliente, con recargos de seguridad distintos, 1%, 2%, 3% y 4%.
@@ -346,7 +347,7 @@ ggplot(df_siniestros2)+
 
 Nuevamente se observa una distribución de los siniestros muy simétrica, con un valor medio de 3394 siniestros y un desvío estandar de 58 siniestros.
 
-Ahora se calculará la cuantía individual de cada uno de los siniestros en cada año, a partir de una distribución de Weibull, con $\hat{\alpha} = 1.9831$ y $\hat{\beta} = 501076.6639$. Dicha estimación de los parámetros se realizó mediante el *método de máxima verosimilitud*(el cálculo mencionado no se realiza con una formula simple, sino que debe recurrirse a métodos numéricos):
+Ahora se calculará la cuantía individual de cada uno de los siniestros en cada año, a partir de una distribución de Weibull, con $\hat{\alpha} = 1,9831$ y $\hat{\beta} = 501.076,6639$. Dicha estimación de los parámetros se realizó mediante el *método de máxima verosimilitud*(el cálculo mencionado no se realiza con una formula simple, sino que debe recurrirse a métodos numéricos):
 
 ```{r}
 set.seed(2)
@@ -452,6 +453,7 @@ msm_data_formateado_1 %>%
   row_spec(0, bold = TRUE, background = "#A61C3C", color = "white") %>%
   column_spec(1, bold = TRUE)
 ```
+
 ### Propuesta 3 (Poisson - Gamma)
 
 Al igual que en los casos anteriores, se simulará la distribución de la cantidad de siniestros mediante la distribución Poisson con parámetro $\hat{\lambda} = 0.1325$.
@@ -488,11 +490,11 @@ ggplot(df_siniestros3)+
   theme(plot.title = element_text(size = 10,face = "bold",hjust = 0.5))
 ```
 
-Obteniendo una media en la cantidad de siniestros igual a 3458 siniestros, y un desvío estandar de 59 siniestros.
+Obteniendo una media en la cantidad de siniestros igual a 3394 siniestros, y un desvío estandar de 58 siniestros.
 
 Ahora para el cálculo de las cuantías individuales, se opta por la distribución Gamma, dicha distribución es muy flexible y permite modelar distribuciones con distintos grados de asimetría. Para este caso los parámetros $\alpha$ y $\beta$ serán estimados de la siguiente manera:
 
-$$\hat{\beta}  = \frac{S^2_x}{\overline{X}} = 346274.2 \ , \ \hat{\alpha} = \frac{\overline{X}}{\hat{\beta}} = 2.728781$$
+$$\hat{\beta}  = \frac{S^2_x}{\overline{X}} = 119.944,1 \ ; \ \hat{\alpha} = \frac{\overline{X}}{\hat{\beta}} = 3,789819$$
 
 ```{r}
 set.seed(3)
@@ -504,7 +506,7 @@ alpha = mean(df_cuantias$`Cuantía actualizada`)/beta
 simulaciones3 <- vector("list", length(siniestros3))
 
 if(FALSE){for(i in 1:length(siniestros3)) {
-  simulaciones3[[i]] <- rgamma(siniestros3[i], shape = 2.728781, scale = 346274.2)
+  simulaciones3[[i]] <- rgamma(siniestros3[i], shape = 3.789819, scale = 119944.1)
 }}
 
 #muestra3_100 <- sample(simulaciones3, size = 100)
@@ -542,7 +544,6 @@ a3 = ggplot(totales3)+
   aes(x=totales3)+
   geom_histogram(bins = 20, color = "black", fill = "#D979A2")+
   labs(title = "Distribución de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
-  scale_x_continuous(breaks = c(3000000000,3200000000,3400000000))+
   theme_minimal()+
   theme(plot.title = element_text(size = 9,face = "bold"), axis.text.x = element_text(size = 8))
 
@@ -550,7 +551,6 @@ b3 = ggplot(totales3)+
   aes(x=totales3)+
   geom_density(color = "#A61C3C")+
   labs(title = "Densidad de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
-  scale_x_continuous(breaks = c(3000000000,3200000000,3400000000))+
   theme_minimal()+
   theme(plot.title = element_text(size = 9,face = "bold"), axis.text.x = element_text(size = 8))
 
@@ -561,41 +561,49 @@ a3 + b3
 #sd(totales3$totales3)
 ```
 
-Nuevamente se observa una distribución muy simetrica, esto puede deberse a la elevada cantidad de simulaciones realizadas (100.000), donde observamos un coeficiente de asimetría muestral igual a $0.0309$.
+Nuevamente se observa una distribución muy simetrica, esto puede deberse a la elevada cantidad de simulaciones realizadas (100.000), donde observamos un coeficiente de asimetría muestral igual a $0.0219$.
 
-Por lo tanto, y al igual que los casos anteriores, el Margen de Solvencia Mínimo se calculará mediante una aproximación Normal de las cuantías totales con $\mu = 3.267.268.560$ y $\sigma = 65.025.438$.
+Por lo tanto, y al igual que los casos anteriores, el Margen de Solvencia Mínimo se calculará mediante una aproximación Normal de las cuantías totales con $\mu = 1.542.747.461$ y $\sigma = 29.784.871$.
 
 #### Margen de Solvencia Mínimo
 
-Una vez más, se utilizarán recargos de seguridad del 1% y 3%.
+Nuevamente, buscando ser consistentes con lo trabajado anteriormente, se utilizarán recargos de seguridad del 1% al 4%.
 
-Para que la probabilidad de solvencia sea del 99% (O la probabilidad de Ruina Técnica sea del 1%), se necesita conocer el valor de la Normal Estandar que acumula el 99% de probabilidad.
+Para que la probabilidad de solvencia sea del 99%, se necesita conocer el valor de la Normal Estandar que acumula el 99% de probabilidad.
 
 $$ Z \sim  N(0,1)  \rightarrow P(Z < z_0) = 0,99 \rightarrow z_0 = 2,326$$
+-   Para un *recargo de seguridad (R) del* $(\alpha \times 100)$%:
 
--   Para un *recargo de seguridad (R) del 1%*:
-
-$$E(Y) = 3.267.268.560 , \ SD(Y) = 65.025.438 , \ R = E(Y) \times 0,01 = 32.672.686 , \ PR = E(Y) + R = 3.299.941.246$$
-
-Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
-
-$$ y_0 = 3.267.268.560 + 2,326 \times 65.025.438 = 3.418.517.729 $$
-
-Y el Margen de Solvencia Mínimo resulta:
-
-$$MSM = y_0 - PR = 3.418.517.729 - 3.299.941.246 = 118.576.483$$
-
--   Para un *recargo de seguridad (R) del 3%*:
-
-$$E(Y) = 3.267.268.560 , \ SD(Y) = 65.025.438 , \ R = E(Y) \times 0,03 = 98.018.057 , \ PR = E(Y) + R = 3.365.286.617$$
+$$E(Y) = 1.542.747.461 , \ SD(Y) = 29.784.871 , \ R = E(Y) \times \alpha , \ PR = E(Y) + R $$
 
 Entonces el monto total a cobrar al cliente para garantizar una solvencia del 99% es:
 
-$$ y_0 = 3.267.268.560 + 2,326 \times 65.025.438 = 3.418.517.729 $$
+$$ y_0 = 1.542.747.461 + 2,326\times29.784.871 = 1.612.027.071 $$
 
-Y el Margen de Solvencia Mínimo resulta:
+Y el **Margen de Solvencia Mínimo** resulta:
 
-$$MSM = y_0 - PR = 3.418.517.729 - 3.365.286.617 = 53.231.112$$
+$$MSM = y_0 - PR = 1.612.027.071 - PR$$
+Para los distintos recargos entonces tenemos:
+
+```{r}
+msm_data_2 <- data.frame(
+  Porcentaje = c("1%", "2%", "3%", "4%"),
+  PR = c(1558174936, 1573602410, 1589029885, 1604457359),
+  MSM = c(53852135, 38424661, 22997186, 7569712)
+)
+
+msm_data_formateado_2 <- msm_data_2 %>%
+  mutate(
+    PR = dollar(PR, prefix = "$", big.mark = ".", decimal.mark = ","),
+    MSM = dollar(MSM, prefix = "$", big.mark = ".", decimal.mark = ",")
+  )
+
+msm_data_formateado_2 %>%
+  kable("html", caption = "Margen de Solvencia Mínimo (MSM) según distintos porcentajes de recargo", align = "c") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"), position = "center") %>%
+  row_spec(0, bold = TRUE, background = "#A61C3C", color = "white") %>%
+  column_spec(1, bold = TRUE)
+```
 
 ## Discusión
 
@@ -621,18 +629,18 @@ dens_emp <- density(df_cuantias$`Cuantía actualizada`, na.rm = TRUE)
 df_emp <- data.frame(x = dens_emp$x, y = dens_emp$y, distribucion = "Empírica")
 
 # Secuencia común para las teóricas
-x <- seq(0, 12000000, length.out = 100000)
+x <- seq(0, 3000000, length.out = 100000)
 
 # Log-Normal
 dens_ln <- dlnorm(x, meanlog = log_media, sdlog = log_desvio)
 df_ln <- data.frame(x = x, y = dens_ln, distribucion = "Log-normal")
 
 # Weibull
-dens_wb <- dweibull(x, shape = 1.79472, scale = 1052668.59354)
+dens_wb <- dweibull(x, shape = 1.98319396, scale = 501076.66390846)
 df_wb <- data.frame(x = x, y = dens_wb, distribucion = "Weibull")
 
 # Gamma
-dens_gm <- dgamma(x, shape = 2.728781, scale = 346274.2)
+dens_gm <- dgamma(x, shape = 3.789819, scale = 119944.1)
 df_gm <- data.frame(x = x, y = dens_gm, distribucion = "Gamma")
 
 # Unir todos los data frames
@@ -650,7 +658,7 @@ ggplot() +
        x = "Cuantía",
        y = "Densidad",
        color = "Distribución") +
-  scale_x_continuous(breaks = c(0, 4000000, 8000000, 12000000)) +
+  coord_cartesian(xlim = c(0, 2000000)) +  
   theme_minimal() +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5))
 
@@ -665,10 +673,10 @@ Luego de calcular los Margenes de Solvencia Mínimos para cada una de las propue
 ```{r}
 
 tabla_msm <- tribble(
-  ~Distribución,     ~`MSM (1%)`,        ~`MSM (3%)`,
-  "Log-normal",      110667838,          45682859,
-  "Weibull",         115747874,          50991725,
-  "Gamma",           118576483,          53231112
+  ~Distribución,  ~`MSM (1%)`, ~`MSM (2%)`,  ~`MSM (3%)`,  ~`MSM (4%)`,
+  "Log-normal", 50122024, 34840980, 19559936, 4278892,
+  "Weibull", 53003776, 37929479, 22855182, 7780885,
+  "Gamma", 53852135, 38424661, 22997186, 7569712
 )
 
 tabla_msm %>%
@@ -678,6 +686,6 @@ tabla_msm %>%
   row_spec(0, bold = TRUE, background = "#A61C3C", color = "white")
 ```
 
-Se puede identificar que los margenes varían para los distintos recargos, resultando que a mayor recargo de seguridad se obtiene un menor Margen de Solvencia Mínimo. Mientras que también se observa que dicho margen varía con respecto a las distintas distribuciones propuestas para las cuantías individuales, resultando la distribución Log-Normal la que presenta valores más chicos de dichos margenes, resultando a su vez, la que mejor ajusta a los datos observados.
+Se puede identificar que los margenes varían para los distintos recargos, resultando que a mayor recargo de seguridad se obtiene un menor Margen de Solvencia Mínimo. Mientras que también se observa que dicho margen varía con respecto a las distintas distribuciones propuestas para las cuantías individuales, resultando la distribución Log-Normal la que presenta valores más chicos de dichos margenes, siendo a su vez, la que mejor ajusta a los datos observados.
 
 Esto resultó de interés ya que, si se eligiera otra distribución entre las propuestas para simular las cuantías, se podría estar cobrandole más de lo necesario a nuestros clientes.
