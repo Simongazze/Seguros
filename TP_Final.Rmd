@@ -111,7 +111,7 @@ resumen %>%
   column_spec(1, bold = TRUE)
 ```
 
-Además, se cuenta con la información de la cantidad de siniestros y de las cuantías totales para los años 2021, 2022 y 2023. Se presentan a continuación:
+Además, se cuenta con la información de la cantidad de pólizas y de la cantidad de siniestros para los años 2021, 2022 y 2023. Dicha información se presenta a continuación:
 
 ```{r}
 df <- data.frame(
@@ -154,7 +154,7 @@ Para realizar el cálculo del Margen de Solvencia Mínimo se debe obtener la dis
 
 -   **Cuantías individuales de los siniestros**, en base a la distribución ya conocida de las cuantías individuales en el año 2023.
 
-Es decir, se simulará inicialmente el número de siniestros para un año y para esta cantidad de siniestros se simulará la cuantía de cada uno de ellos. Este procedimiento se repetirá para un gran número de años, peritiendo obtener así la distribución aproximada de la cuantía total.
+Es decir, se simulará inicialmente el número de siniestros para un año y para esta cantidad de siniestros se simulará la cuantía de cada uno de ellos. Este procedimiento se repetirá para un gran número de años, permitiendo obtener así la distribución aproximada de la cuantía total.
 
 Es importante aclarar que para cada uno de estos años simulados, se va a suponer que el número de pólizas es el mismo que las que se tienen en el año 2023, es decir, 25.615 pólizas.
 
@@ -197,7 +197,7 @@ ggplot(df_siniestros1)+
 
 Se observa una distribución simétrica, con un valor medio de 3394 siniestros y un desvío estándar de 58 siniestros.
 
-Ahora se calculará la cuantía individual de cada uno de los siniestros en cada año, a partir de una distribución Log Normal, con $\hat{\mu} = 12,95207$ y $\hat{\sigma_x} = 0,3617761$. Dichas estimaciones son las *estimaciones máximo verosímiles* de esta distribución y se obtienen de la siguiente manera:
+Ahora se calculará la cuantía individual de cada uno de los siniestros en cada año, a partir de una distribución Log Normal, con $\hat{\mu} = 12,95207$ y $\hat{\sigma} = 0,3617761$. Dichas estimaciones son las *estimaciones máximo verosímiles* de esta distribución y se obtienen de la siguiente manera:
 
 $$\hat{\mu} = \frac{1}{n}\sum_{i=1}^n log(x_i) = 12,95207 \ ,\ \hat{\sigma}= \frac{1}{n}\sum_{i=1}^n (log(x_i)-\hat{\mu})^2= 0,3617761$$
 
@@ -396,6 +396,7 @@ a2 = ggplot(totales2)+
   aes(x=totales2)+
   geom_histogram(bins = 20, color = "black", fill = "#D979A2")+
   labs(title = "Distribución de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
+  scale_x_continuous(breaks = c(1400000000,1500000000,1600000000))+
   theme_minimal()+
   theme(plot.title = element_text(size = 9,face = "bold"), axis.text.x = element_text(size = 8))
 
@@ -403,6 +404,7 @@ b2 = ggplot(totales2)+
   aes(x=totales2)+
   geom_density(color = "#A61C3C")+
   labs(title = "Densidad de las cuantías totales simuladas", y = "Frecuencia", x = "Cuantías totales")+
+  scale_x_continuous(breaks = c(1400000000,1500000000,1600000000))+
   theme_minimal()+
   theme(plot.title = element_text(size = 9,face = "bold"), axis.text.x = element_text(size = 8))
 
