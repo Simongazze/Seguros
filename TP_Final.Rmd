@@ -87,7 +87,8 @@ resumen <- df_cuantias %>%
     `1er Cuartil (Q1)` = quantile(`Cuantía actualizada`, 0.25, na.rm = TRUE),
     `3er Cuartil (Q3)` = quantile(`Cuantía actualizada`, 0.75, na.rm = TRUE),
     `Máximo` = max(`Cuantía actualizada`, na.rm = TRUE),
-    `Asimetría` = e1071::skewness(`Cuantía actualizada`, na.rm = TRUE)
+    `Asimetría` = e1071::skewness(`Cuantía actualizada`, na.rm = TRUE),
+    `Cuantía Total` =  sum(`Cuantía actualizada`, na.rm = TRUE)
   ) %>%
   t() %>%
   as.data.frame() %>%
@@ -97,7 +98,7 @@ resumen <- df_cuantias %>%
 # Agregar formato de pesos solo a las medidas monetarias
 resumen <- resumen %>%
   mutate(Valor = ifelse(
-    Medida %in% c("Media", "Mediana", "Desvío estándar", "Mínimo", "1er Cuartil (Q1)", "3er Cuartil (Q3)", "Máximo"),
+    Medida %in% c("Media", "Mediana", "Desvío estándar", "Mínimo", "1er Cuartil (Q1)", "3er Cuartil (Q3)", "Máximo", "Cuantía Total"),
     formato_pesos(as.numeric(Valor)),
     round(as.numeric(Valor), 2)
   ))
